@@ -71,6 +71,60 @@ public static class DbSeeder
                 ImageUrl = "/images/products/sandwich.jpg",
                 Price = 3.50m,
                 StockQuantity = 35
+            },
+            new()
+            {
+                Barcode = "777777",
+                Name = "Croissant",
+                Category = "Bakery",
+                ImageUrl = "/images/products/croissant.jpg",
+                Price = 1.75m,
+                StockQuantity = 45
+            },
+            new()
+            {
+                Barcode = "888888",
+                Name = "Orange Juice",
+                Category = "Drinks",
+                ImageUrl = "/images/products/juice.jpg",
+                Price = 2.25m,
+                StockQuantity = 70
+            },
+            new()
+            {
+                Barcode = "999999",
+                Name = "Energy Drink",
+                Category = "Drinks",
+                ImageUrl = "/images/products/energy.jpg",
+                Price = 2.50m,
+                StockQuantity = 55
+            },
+            new()
+            {
+                Barcode = "101010",
+                Name = "Gum",
+                Category = "Snacks",
+                ImageUrl = "/images/products/gum.jpg",
+                Price = 0.60m,
+                StockQuantity = 120
+            },
+            new()
+            {
+                Barcode = "121212",
+                Name = "Milk",
+                Category = "Dairy",
+                ImageUrl = "/images/products/milk.jpg",
+                Price = 1.80m,
+                StockQuantity = 40
+            },
+            new()
+            {
+                Barcode = "131313",
+                Name = "Yogurt",
+                Category = "Dairy",
+                ImageUrl = "/images/products/yogurt.jpg",
+                Price = 1.10m,
+                StockQuantity = 65
             }
         };
 
