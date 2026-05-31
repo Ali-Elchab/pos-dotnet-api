@@ -34,6 +34,13 @@ public class AppDbContext : DbContext
                 .HasMaxLength(200)
                 .IsRequired();
 
+            entity.Property(p => p.Category)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(p => p.ImageUrl)
+                .HasMaxLength(500);
+
             entity.Property(p => p.Price)
                 .HasColumnType("decimal(18,2)");
 
@@ -71,6 +78,13 @@ public class AppDbContext : DbContext
             entity.Property(i => i.ProductName)
                 .HasMaxLength(200)
                 .IsRequired();
+
+            entity.Property(i => i.Category)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(i => i.ImageUrl)
+                .HasMaxLength(500);
 
             entity.Property(i => i.UnitPrice).HasColumnType("decimal(18,2)");
             entity.Property(i => i.LineTotal).HasColumnType("decimal(18,2)");

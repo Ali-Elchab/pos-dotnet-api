@@ -27,6 +27,8 @@ public class ProductService : IProductService
                 Id = p.Id,
                 Barcode = p.Barcode,
                 Name = p.Name,
+                Category = p.Category,
+                ImageUrl = p.ImageUrl,
                 Price = p.Price,
                 StockQuantity = p.StockQuantity
             })
@@ -53,7 +55,7 @@ public class ProductService : IProductService
 
     public async Task<ProductResponse> CreateAsync(ProductCreateRequest request)
     {
-        Validate(request.Barcode, request.Name, request.Price, request.StockQuantity);
+        Validate(request.Barcode, request.Name, request.Category, request.Price, request.StockQuantity);
 
         var exists = await _context.Products
             .AnyAsync(x => x.Barcode == request.Barcode);
@@ -63,6 +65,8 @@ public class ProductService : IProductService
         {
             Barcode = request.Barcode.Trim(),
             Name = request.Name.Trim(),
+            Category = request.Category.Trim(),
+            ImageUrl = NormalizeOptionalText(request.ImageUrl),
             Price = request.Price,
             StockQuantity = request.StockQuantity,
             IsActive = true
@@ -76,7 +80,7 @@ public class ProductService : IProductService
 
     public async Task<ProductResponse?> UpdateAsync(int id, ProductUpdateRequest request)
     {
-        Validate(request.Barcode, request.Name, request.Price, request.StockQuantity);
+        Validate(request.Barcode, request.Name, request.Category, request.Price, request.StockQuantity);
 
         var p = await _context.Products.FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
         if (p is null) return null;
@@ -89,6 +93,8 @@ public class ProductService : IProductService
 
         p.Barcode = request.Barcode.Trim();
         p.Name = request.Name.Trim();
+        p.Category = request.Category.Trim();
+        p.ImageUrl = NormalizeOptionalText(request.ImageUrl);
         p.Price = request.Price;
         p.StockQuantity = request.StockQuantity;
 
@@ -115,15 +121,23 @@ public class ProductService : IProductService
         Id = p.Id,
         Barcode = p.Barcode,
         Name = p.Name,
+        Category = p.Category,
+        ImageUrl = p.ImageUrl,
         Price = p.Price,
         StockQuantity = p.StockQuantity
     };
 
-    private static void Validate(string barcode, string name, decimal price, int stockQuantity)
+    private static void Validate(string barcode, string name, string category, decimal price, int stockQuantity)
     {
         if (string.IsNullOrWhiteSpace(barcode)) throw new ValidationException("Barcode is required");
         if (string.IsNullOrWhiteSpace(name)) throw new ValidationException("Name is required");
+        if (string.IsNullOrWhiteSpace(category)) throw new ValidationException("Category is required");
         if (price < 0) throw new ValidationException("Price must be >= 0");
         if (stockQuantity < 0) throw new ValidationException("StockQuantity must be >= 0");
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

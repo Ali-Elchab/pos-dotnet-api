@@ -56,6 +56,8 @@ public class SaleService : ISaleService
                 ProductId = product.Id,
                 Barcode = product.Barcode,
                 ProductName = product.Name,
+                Category = product.Category,
+                ImageUrl = product.ImageUrl,
                 UnitPrice = product.Price,
                 Quantity = requestedItem.Quantity,
                 LineTotal = product.Price * requestedItem.Quantity
@@ -115,6 +117,8 @@ public class SaleService : ISaleService
             ProductId = item.ProductId,
             Barcode = item.Barcode,
             ProductName = item.ProductName,
+            Category = item.Category,
+            ImageUrl = item.ImageUrl,
             UnitPrice = item.UnitPrice,
             Quantity = item.Quantity,
             LineTotal = item.LineTotal
