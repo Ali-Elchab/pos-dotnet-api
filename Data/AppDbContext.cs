@@ -12,6 +12,10 @@ public class AppDbContext : DbContext
 
     public DbSet<Product> Products => Set<Product>();
 
+    public DbSet<Sale> Sales => Set<Sale>();
+
+    public DbSet<SaleItem> SaleItems => Set<SaleItem>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -35,6 +39,46 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(p => p.Barcode)
                 .IsUnique();
+        });
+
+        modelBuilder.Entity<Sale>(entity =>
+        {
+            entity.ToTable("Sales");
+
+            entity.HasKey(s => s.Id);
+
+            entity.Property(s => s.Subtotal).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.Tax).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.Total).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.AmountPaid).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.ChangeDue).HasColumnType("decimal(18,2)");
+
+            entity.HasMany(s => s.Items)
+                .WithOne(i => i.Sale)
+                .HasForeignKey(i => i.SaleId);
+        });
+
+        modelBuilder.Entity<SaleItem>(entity =>
+        {
+            entity.ToTable("SaleItems");
+
+            entity.HasKey(i => i.Id);
+
+            entity.Property(i => i.Barcode)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(i => i.ProductName)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(i => i.UnitPrice).HasColumnType("decimal(18,2)");
+            entity.Property(i => i.LineTotal).HasColumnType("decimal(18,2)");
+
+            entity.HasOne(i => i.Product)
+                .WithMany()
+                .HasForeignKey(i => i.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

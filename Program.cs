@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Pos.Api.Data;
 using POS.Data;
 using POS.Services.Products;
+using POS.Services.Sales;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +13,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IProductService, ProductService>();
-object value = builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
