@@ -10,115 +10,116 @@ public class ProductService : IProductService
 {
     private readonly AppDbContext _context;
 
-    public ProductService(AppDbContext context)
-    {
-        _context = context;
-    }
+    public ProductService(AppDbContext context) => _context = context;
 
     public async Task<List<ProductResponse>> GetAllAsync(string? barcode = null)
     {
-        var query = _context.Products.AsQueryable();
-
-        // only active products
-        query = query.Where(p => p.IsActive);
+        var query = _context.Products
+            .AsNoTracking()
+            .Where(p => p.IsActive);
 
         if (!string.IsNullOrWhiteSpace(barcode))
-        {
             query = query.Where(p => p.Barcode == barcode);
-        }
 
         return await query
-            .Select(product => new ProductResponse
+            .Select(p => new ProductResponse
             {
-                Id = product.Id,
-                Barcode = product.Barcode,
-                Name = product.Name,
-                Price = product.Price,
-                StockQuantity = product.StockQuantity
+                Id = p.Id,
+                Barcode = p.Barcode,
+                Name = p.Name,
+                Price = p.Price,
+                StockQuantity = p.StockQuantity
             })
             .ToListAsync();
     }
 
     public async Task<ProductResponse?> GetByIdAsync(int id)
     {
-        var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
-        if (product == null) return null;
+        var p = await _context.Products
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
 
-        return Map(product);
+        return p is null ? null : Map(p);
     }
 
-    // Barcode lookup consolidated into GetAllAsync via optional query parameter
+    public async Task<ProductResponse?> GetByBarcodeAsync(string barcode)
+    {
+        var p = await _context.Products
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Barcode == barcode && x.IsActive);
+
+        return p is null ? null : Map(p);
+    }
 
     public async Task<ProductResponse> CreateAsync(ProductCreateRequest request)
     {
-        ValidateRequest(request.Barcode, request.Name, request.Price, request.StockQuantity);
+        Validate(request.Barcode, request.Name, request.Price, request.StockQuantity);
 
-        // check unique barcode
-        if (await _context.Products.AnyAsync(p => p.Barcode == request.Barcode))
-            throw new ValidationException("Barcode must be unique");
+        var exists = await _context.Products
+            .AnyAsync(x => x.Barcode == request.Barcode);
+        if (exists) throw new ValidationException("Barcode must be unique");
 
-        var product = new Product
+        var p = new Product
         {
-            Barcode = request.Barcode,
-            Name = request.Name,
+            Barcode = request.Barcode.Trim(),
+            Name = request.Name.Trim(),
             Price = request.Price,
             StockQuantity = request.StockQuantity,
             IsActive = true
         };
 
-        _context.Products.Add(product);
+        _context.Products.Add(p);
         await _context.SaveChangesAsync();
 
-        return Map(product);
+        return Map(p);
     }
 
     public async Task<ProductResponse?> UpdateAsync(int id, ProductUpdateRequest request)
     {
-        ValidateRequest(request.Barcode, request.Name, request.Price, request.StockQuantity);
+        Validate(request.Barcode, request.Name, request.Price, request.StockQuantity);
 
-        var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
-        if (product == null) return null;
+        var p = await _context.Products.FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
+        if (p is null) return null;
 
-        // check unique barcode excluding current
-        if (await _context.Products.AnyAsync(p => p.Barcode == request.Barcode && p.Id != id))
-            throw new ValidationException("Barcode must be unique");
+        if (!string.Equals(p.Barcode, request.Barcode, StringComparison.Ordinal))
+        {
+            var conflict = await _context.Products.AnyAsync(x => x.Barcode == request.Barcode && x.Id != id);
+            if (conflict) throw new ValidationException("Barcode must be unique");
+        }
 
-        product.Barcode = request.Barcode;
-        product.Name = request.Name;
-        product.Price = request.Price;
-        product.StockQuantity = request.StockQuantity;
+        p.Barcode = request.Barcode.Trim();
+        p.Name = request.Name.Trim();
+        p.Price = request.Price;
+        p.StockQuantity = request.StockQuantity;
 
-        _context.Products.Update(product);
         await _context.SaveChangesAsync();
 
-        return Map(product);
+        return Map(p);
     }
 
-    public async Task<bool> SoftDeleteAsync(int id)
+    // Deactivate keeps the entity but marks it inactive
+    public async Task<bool> SoftDeleteAsync(int id) => await DeactivateAsync(id);
+
+    public async Task<bool> DeactivateAsync(int id)
     {
-        var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
-        if (product == null) return false;
+        var p = await _context.Products.FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
+        if (p is null) return false;
 
-        product.IsActive = false;
-        _context.Products.Update(product);
+        p.IsActive = false;
         await _context.SaveChangesAsync();
-
         return true;
     }
 
-    private static ProductResponse Map(Product product)
+    private static ProductResponse Map(Product p) => new()
     {
-        return new ProductResponse
-        {
-            Id = product.Id,
-            Barcode = product.Barcode,
-            Name = product.Name,
-            Price = product.Price,
-            StockQuantity = product.StockQuantity
-        };
-    }
+        Id = p.Id,
+        Barcode = p.Barcode,
+        Name = p.Name,
+        Price = p.Price,
+        StockQuantity = p.StockQuantity
+    };
 
-    private static void ValidateRequest(string barcode, string name, decimal price, int stockQuantity)
+    private static void Validate(string barcode, string name, decimal price, int stockQuantity)
     {
         if (string.IsNullOrWhiteSpace(barcode)) throw new ValidationException("Barcode is required");
         if (string.IsNullOrWhiteSpace(name)) throw new ValidationException("Name is required");
